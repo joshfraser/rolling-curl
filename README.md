@@ -30,7 +30,7 @@ $urls = array("http://www.google.com",
               "http://www.yahoo.com");
 
 // a function that will process the returned responses
-function request_callback($response, $info) {
+function request_callback($response, $info, $request) {
 
 	// parse the page title out of the returned HTML
 	if (preg_match("~<title>(.*?)</title>~i", $response, $out)) {
@@ -39,6 +39,7 @@ function request_callback($response, $info) {
 	
 	echo "<b>$title</b><br />";
 	print_r($info);
+	print_r($request);
 	echo "<hr>";
 }
 
@@ -58,7 +59,7 @@ foreach ($urls as $url) {
 $rc->execute();
 
 ```
-
+(Note, if you have an associative array of urls,  and in the callback you want to determine which key was the holder of the currently executed url, then you can use [such example](https://pastebin.com/raw/q4iP8jkG)  )
 
 
 ###Example 2 - Setting custom options:
