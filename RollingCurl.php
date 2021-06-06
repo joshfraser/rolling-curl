@@ -325,6 +325,8 @@ class RollingCurl {
                 if ($i < sizeof($this->requests) && isset($this->requests[$i]) && $i < count($this->requests)) {
                     $ch = curl_init();
                     $options = $this->get_options($this->requests[$i]);
+                    if ( $this->IsNewPhp() ) 
+                        $options[CURLOPT_PRIVATE] = "req_$i";
                     curl_setopt_array($ch,$options);
                     curl_multi_add_handle($master, $ch);
 
