@@ -200,7 +200,26 @@ class RollingCurl {
     public function post($url, $post_data = null, $headers = null, $options = null) {
         return $this->request($url, "POST", $post_data, $headers, $options);
     }
-
+	
+    /**
+     * Check if PHP version is 8+ (because approaches are changed)
+     * https://www.php.net/manual/en/class.curlhandle.php
+	 * 
+     * @return bool
+     */
+	public function IsNewPhp() {
+		return PHP_MAJOR_VERSION >= 8;
+	}
+    /**
+     * Determine the correct way for stringify
+     *
+     * @param int $curlHandle CurlHandle object
+     * @return string
+     */
+    public function HandleKey($curlHandle) { 
+        return $this->IsNewPhp() ? md5( json_encode( curl_getinfo( $curlHandle, CURLOPT_PRIVATE ) ) ) : (string) $curlHandle;
+    }
+	
     /**
      * Execute the curl
      *
@@ -270,12 +289,14 @@ class RollingCurl {
             $ch = curl_init();
 
             $options = $this->get_options($this->requests[$i]);
+            if ( $this->IsNewPhp() ) 
+				$options[CURLOPT_PRIVATE] = "req_{$i}_". md5($options[CURLOPT_URL]);
 
             curl_setopt_array($ch,$options);
             curl_multi_add_handle($master, $ch);
 
             // Add to our request Maps
-            $key = (string) $ch;
+            $key = $this->HandleKey($ch);
             $this->requestMap[$key] = $i;
         }
 
@@ -294,7 +315,7 @@ class RollingCurl {
                 // send the return values to the callback function.
                 $callback = $this->callback;
                 if (is_callable($callback)){
-	            $key = (string)$done['handle'];
+					$key = $this->HandleKey( $done['handle'] );
                     $request = $this->requests[$this->requestMap[$key]];
                     unset($this->requestMap[$key]);
                     call_user_func($callback, $output, $info, $request);
@@ -308,7 +329,7 @@ class RollingCurl {
                     curl_multi_add_handle($master, $ch);
 
                     // Add to our request Maps
-                    $key = (string) $ch;
+                    $key = $this->HandleKey( $ch );
                     $this->requestMap[$key] = $i;
                     $i++;
                 }
