@@ -45,7 +45,7 @@ class RollingCurlRequest {
 /**
  * RollingCurl custom exception
  */
-class RollingCurlException extends Exception {}
+class RollingCurlException extends \Exception {}
 
 /**
  * Class that holds a rolling queue of curl requests.
