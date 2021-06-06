@@ -1,4 +1,4 @@
-<?php 
+<?php
 /*
 Authored by Josh Fraser (www.joshfraser.com)
 Released under Apache License 2.0
@@ -45,7 +45,7 @@ class RollingCurlRequest {
 /**
  * RollingCurl custom exception
  */
-class RollingCurlException extends Exception {}
+class RollingCurlException extends \Exception {}
 
 /**
  * Class that holds a rolling queue of curl requests.
@@ -243,6 +243,26 @@ class RollingCurl {
 	return true;
     }
 
+	
+    /**
+     * Check if PHP version is 8+ (because approaches are changed)
+     * https://www.php.net/manual/en/class.curlhandle.php
+	 * 
+     * @return bool
+     */
+	public function IsNewPhp() {
+		return PHP_MAJOR_VERSION >= 8;
+	}
+    /**
+     * Determine the correct way for stringify
+     *
+     * @param int $curlHandle CurlHandle object
+     * @return string
+     */
+    public function HandleKey($curlHandle) { 
+        return $this->IsNewPhp() ? md5( json_encode( curl_getinfo( $curlHandle, CURLOPT_PRIVATE ) ) ) : (string) $curlHandle;
+    }
+	
     /**
      * Performs multiple curl requests
      *
@@ -270,12 +290,13 @@ class RollingCurl {
             $ch = curl_init();
 
             $options = $this->get_options($this->requests[$i]);
-
+            if ( $this->IsNewPhp() ) 
+				$options[CURLOPT_PRIVATE] = "req_{$i}_". md5($options[CURLOPT_URL]);
             curl_setopt_array($ch,$options);
-            curl_multi_add_handle($master, $ch);
+            curl_multi_add_handle($master, $ch); 
 
             // Add to our request Maps
-            $key = (string) $ch;
+            $key = $this->HandleKey($ch);
             $this->requestMap[$key] = $i;
         }
 
@@ -293,7 +314,7 @@ class RollingCurl {
                 // send the return values to the callback function.
                 $callback = $this->callback;
                 if (is_callable($callback)){
-	            $key = (string)$done['handle'];
+	            	$key = $this->HandleKey($done['handle']);
                     $request = $this->requests[$this->requestMap[$key]];
                     unset($this->requestMap[$key]);
                     call_user_func($callback, $output, $info, $request);
@@ -307,7 +328,7 @@ class RollingCurl {
                     curl_multi_add_handle($master, $ch);
 
                     // Add to our request Maps
-                    $key = (string) $ch;
+                    $key = $this->HandleKey($ch);
                     $this->requestMap[$key] = $i;
                     $i++;
                 }
