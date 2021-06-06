@@ -217,7 +217,7 @@ class RollingCurl {
      * @return string
      */
     public function HandleKey($curlHandle) { 
-        return $this->IsNewPhp() ? md5( json_encode( curl_getinfo( $curlHandle, CURLOPT_PRIVATE ) ) ) : (string) $curlHandle;
+        return $this->IsNewPhp() ? curl_getinfo( $curlHandle, CURLINFO_PRIVATE ) : (string) $curlHandle;
     }
 	
     /**
@@ -290,7 +290,7 @@ class RollingCurl {
 
             $options = $this->get_options($this->requests[$i]);
             if ( $this->IsNewPhp() ) 
-				$options[CURLOPT_PRIVATE] = "req_{$i}_". md5($options[CURLOPT_URL]);
+                $options[CURLOPT_PRIVATE] = "req_$i";
 
             curl_setopt_array($ch,$options);
             curl_multi_add_handle($master, $ch);
